@@ -60,12 +60,25 @@ export default function GamePage() {
   const [leaderboard, setLeaderboard] = useState<Score[]>([]);
   const [liveScore, setLiveScore] = useState(0);
   const [liveLives, setLiveLives] = useState(3);
+  const [glitchActive, setGlitchActive] = useState(false);
 
-  // Load leaderboard
   useEffect(() => {
     const saved = localStorage.getItem("tma-scores");
     if (saved) setLeaderboard(JSON.parse(saved));
   }, []);
+
+  useEffect(() => {
+    if (phase === "gameover") {
+      // Trigger glitch effect sequence
+      let count = 0;
+      const interval = setInterval(() => {
+        setGlitchActive((v) => !v);
+        count++;
+        if (count > 8) clearInterval(interval);
+      }, 120);
+      return () => clearInterval(interval);
+    }
+  }, [phase]);
 
   const saveScore = (name: string, score: number) => {
     const updated = [...leaderboard, { name, score }]
@@ -158,16 +171,77 @@ export default function GamePage() {
       ctx.clearRect(0, 0, W, H);
 
       // Background
-      ctx.fillStyle = "#0a0a0a";
+      ctx.fillStyle = "#060606";
       ctx.fillRect(0, 0, W, H);
 
-      // Stars (static, drawn fresh each frame for simplicity)
-      ctx.fillStyle = "rgba(231,248,200,0.3)";
-      for (let i = 0; i < 60; i++) {
+      // Grid overlay
+      ctx.strokeStyle = "rgba(231,248,200,0.025)";
+      ctx.lineWidth = 0.5;
+      for (let gx = 0; gx < W; gx += 40) {
+        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+      }
+      for (let gy = 0; gy < H; gy += 40) {
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+      }
+
+      // Stars
+      ctx.fillStyle = "rgba(231,248,200,0.4)";
+      for (let i = 0; i < 80; i++) {
         const sx = ((i * 137 + 17) % W);
         const sy = ((i * 91 + 43) % H);
-        ctx.fillRect(sx, sy, 1, 1);
+        const size = i % 5 === 0 ? 1.5 : 0.8;
+        ctx.fillRect(sx, sy, size, size);
       }
+
+      // HUD frame top
+      ctx.strokeStyle = "rgba(231,248,200,0.15)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(10, 10, W - 20, H - 20);
+
+      // Corner accents
+      const co = 10; const cs = 16;
+      ctx.strokeStyle = "#e7f8c8";
+      ctx.lineWidth = 1.5;
+      [[co, co], [W - co, co], [co, H - co], [W - co, H - co]].forEach(([cx, cy], idx) => {
+        const dx = idx % 2 === 0 ? 1 : -1;
+        const dy = idx < 2 ? 1 : -1;
+        ctx.beginPath(); ctx.moveTo(cx, cy + dy * cs); ctx.lineTo(cx, cy); ctx.lineTo(cx + dx * cs, cy); ctx.stroke();
+      });
+
+      // Cockpit HUD — score display
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(14, 14, 120, 28);
+      ctx.strokeStyle = "rgba(231,248,200,0.2)";
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(14, 14, 120, 28);
+      ctx.fillStyle = "rgba(231,248,200,0.4)";
+      ctx.font = "9px monospace";
+      ctx.letterSpacing = "2px";
+      ctx.fillText("SCORE", 22, 26);
+      ctx.fillStyle = "#e7f8c8";
+      ctx.font = "bold 11px monospace";
+      ctx.fillText(String(state.score).padStart(6, "0"), 22, 37);
+
+      // Lives display
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(W - 134, 14, 120, 28);
+      ctx.strokeStyle = "rgba(231,248,200,0.2)";
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(W - 134, 14, 120, 28);
+      ctx.fillStyle = "rgba(231,248,200,0.4)";
+      ctx.font = "9px monospace";
+      ctx.fillText("SHIELD", W - 126, 26);
+      for (let li = 0; li < 3; li++) {
+        ctx.fillStyle = li < state.lives ? "#e7f8c8" : "rgba(231,248,200,0.1)";
+        ctx.fillRect(W - 126 + li * 22, 30, 14, 8);
+      }
+
+      // Level
+      ctx.fillStyle = "rgba(231,248,200,0.2)";
+      ctx.font = "9px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(`LVL ${state.level}`, W / 2, 28);
+      ctx.textAlign = "left";
 
       // Move & shoot
       if (state.keys.has("ArrowLeft") || state.keys.has("KeyA"))
@@ -199,7 +273,7 @@ export default function GamePage() {
         b.y -= b.speed;
         ctx.fillStyle = "#e7f8c8";
         ctx.shadowColor = "#e7f8c8";
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 10;
         ctx.fillRect(b.x, b.y, b.w, b.h);
         ctx.shadowBlur = 0;
       }
@@ -209,12 +283,12 @@ export default function GamePage() {
       for (const m of state.meteors) {
         m.y += m.speed;
         m.spinAngle += m.spin;
-
         ctx.save();
         ctx.translate(m.x + m.w / 2, m.y + m.h / 2);
         ctx.rotate(m.spinAngle);
         ctx.strokeStyle = m.hp > 1 ? "#ff6b6b" : "rgba(255,255,255,0.6)";
         ctx.lineWidth = 1.5;
+        if (m.hp > 1) { ctx.shadowColor = "#ff6b6b"; ctx.shadowBlur = 8; }
         ctx.beginPath();
         const sides = 7;
         for (let i = 0; i < sides; i++) {
@@ -225,11 +299,11 @@ export default function GamePage() {
         }
         ctx.closePath();
         ctx.stroke();
+        ctx.shadowBlur = 0;
         ctx.fillStyle = m.hp > 1 ? "rgba(255,80,80,0.1)" : "rgba(255,255,255,0.04)";
         ctx.fill();
         ctx.restore();
 
-        // Ship collision
         if (checkCollision(state.ship, m)) {
           spawnParticles(m.x + m.w / 2, m.y + m.h / 2, 12);
           state.meteors = state.meteors.filter((x) => x !== m);
@@ -281,7 +355,7 @@ export default function GamePage() {
       ctx.strokeStyle = "#e7f8c8";
       ctx.lineWidth = 1.5;
       ctx.shadowColor = "#e7f8c8";
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 16;
       ctx.beginPath();
       ctx.moveTo(sx + sw / 2, sy);
       ctx.lineTo(sx + sw, sy + sh);
@@ -293,6 +367,14 @@ export default function GamePage() {
       ctx.fillStyle = "rgba(231,248,200,0.08)";
       ctx.fill();
       ctx.shadowBlur = 0;
+
+      // Engine trail
+      const now = Date.now();
+      if (now % 2 === 0) {
+        ctx.fillStyle = `rgba(231,248,200,${0.3 + Math.random() * 0.3})`;
+        ctx.fillRect(sx + sw * 0.4, sy + sh, 3, 4 + Math.random() * 8);
+        ctx.fillRect(sx + sw * 0.57, sy + sh, 3, 4 + Math.random() * 8);
+      }
 
       state.raf = requestAnimationFrame(loop);
     };
@@ -311,47 +393,106 @@ export default function GamePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-12">
+      <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 24px 40px", position: "relative" }}>
+
+        {/* Scanlines background */}
+        <div style={{
+          position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)",
+        }} />
+
         {phase === "name" && (
-          <div className="text-center max-w-md w-full">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-8 h-px bg-[#e7f8c8]" />
-              <span className="text-[10px] tracking-[0.5em] uppercase text-[#e7f8c8]/70">Game</span>
-              <div className="w-8 h-px bg-[#e7f8c8]" />
+          <div style={{ textAlign: "center", maxWidth: "460px", width: "100%", position: "relative", zIndex: 1 }}>
+            {/* Corner accents */}
+            <div style={{ position: "absolute", top: -20, left: -20, width: "30px", height: "30px", borderTop: "1px solid rgba(231,248,200,0.4)", borderLeft: "1px solid rgba(231,248,200,0.4)" }} />
+            <div style={{ position: "absolute", top: -20, right: -20, width: "30px", height: "30px", borderTop: "1px solid rgba(231,248,200,0.4)", borderRight: "1px solid rgba(231,248,200,0.4)" }} />
+            <div style={{ position: "absolute", bottom: -20, left: -20, width: "30px", height: "30px", borderBottom: "1px solid rgba(231,248,200,0.4)", borderLeft: "1px solid rgba(231,248,200,0.4)" }} />
+            <div style={{ position: "absolute", bottom: -20, right: -20, width: "30px", height: "30px", borderBottom: "1px solid rgba(231,248,200,0.4)", borderRight: "1px solid rgba(231,248,200,0.4)" }} />
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "32px" }}>
+              <div style={{ height: "1px", width: "32px", background: "rgba(231,248,200,0.4)" }} />
+              <span className="label" style={{ color: "rgba(231,248,200,0.6)", fontSize: "10px" }}>Space Game</span>
+              <div style={{ height: "1px", width: "32px", background: "rgba(231,248,200,0.4)" }} />
             </div>
-            <h1 className="font-display text-5xl text-white mb-4">
-              Space<span className="text-[#e7f8c8]">TMA</span>
+
+            <h1 className="display glitch" data-text="SPACE TMA"
+              style={{ fontSize: "clamp(3rem,8vw,5rem)", marginBottom: "8px", letterSpacing: "-0.04em" }}>
+              <span style={{ color: "#f2f2f2" }}>SPACE</span>
+              <span style={{ color: "#e7f8c8" }}>TMA</span>
             </h1>
-            <p className="text-white/40 text-sm mb-8">
+
+            <p style={{ color: "rgba(242,242,242,0.35)", fontSize: "12px", letterSpacing: "0.1em", marginBottom: "40px", lineHeight: 1.8 }}>
               Schieß Asteroiden ab. Überlebe so lange du kannst.<br />
-              Steuerung: ← → oder A D + Leertaste zum Schießen.
+              ← → oder A D + Leertaste zum Schießen.
             </p>
-            <input
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && startGame()}
-              placeholder="Dein Name eingeben..."
-              className="w-full bg-[#111] border border-white/10 text-white px-4 py-3 text-sm tracking-widest mb-4 outline-none focus:border-[#e7f8c8]/50 placeholder:text-white/20"
-              maxLength={16}
-            />
+
+            {/* Neon border input */}
+            <div style={{ position: "relative", marginBottom: "16px" }}>
+              <input
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && startGame()}
+                placeholder="CALLSIGN EINGEBEN..."
+                style={{
+                  width: "100%", background: "rgba(0,0,0,0.8)",
+                  border: "1px solid rgba(231,248,200,0.25)",
+                  color: "#f2f2f2", padding: "14px 20px",
+                  fontSize: "13px", letterSpacing: "0.25em", outline: "none",
+                  fontFamily: "monospace",
+                  transition: "border-color 0.3s, box-shadow 0.3s",
+                  boxShadow: "inset 0 0 20px rgba(0,0,0,0.5)",
+                }}
+                onFocus={(e) => {
+                  (e.target as HTMLInputElement).style.borderColor = "#e7f8c8";
+                  (e.target as HTMLInputElement).style.boxShadow = "0 0 20px rgba(231,248,200,0.15), inset 0 0 20px rgba(0,0,0,0.5)";
+                }}
+                onBlur={(e) => {
+                  (e.target as HTMLInputElement).style.borderColor = "rgba(231,248,200,0.25)";
+                  (e.target as HTMLInputElement).style.boxShadow = "inset 0 0 20px rgba(0,0,0,0.5)";
+                }}
+                maxLength={16}
+              />
+            </div>
+
             <button
               onClick={startGame}
               disabled={!playerName.trim()}
-              className="btn-tma w-full justify-center disabled:opacity-30"
+              style={{
+                width: "100%", padding: "14px 24px",
+                background: playerName.trim() ? "#e7f8c8" : "transparent",
+                border: "1px solid rgba(231,248,200,0.4)",
+                color: playerName.trim() ? "#060606" : "rgba(231,248,200,0.3)",
+                fontSize: "12px", letterSpacing: "0.35em", textTransform: "uppercase",
+                fontWeight: 700, cursor: playerName.trim() ? "pointer" : "not-allowed",
+                transition: "all 0.3s", fontFamily: "inherit",
+                boxShadow: playerName.trim() ? "0 0 30px rgba(231,248,200,0.2)" : "none",
+              }}
             >
-              Spiel starten →
+              MISSION STARTEN →
             </button>
 
-            {/* Leaderboard */}
             {leaderboard.length > 0 && (
-              <div className="mt-12">
-                <h2 className="text-[10px] tracking-widest uppercase text-[#e7f8c8]/50 mb-4">Highscores</h2>
-                <div className="divide-y divide-white/5">
+              <div style={{ marginTop: "40px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+                  <div style={{ height: "1px", flex: 1, background: "rgba(255,255,255,0.06)" }} />
+                  <span style={{ fontSize: "9px", letterSpacing: "0.4em", textTransform: "uppercase", color: "rgba(231,248,200,0.4)" }}>Highscores</span>
+                  <div style={{ height: "1px", flex: 1, background: "rgba(255,255,255,0.06)" }} />
+                </div>
+                <div style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
                   {leaderboard.slice(0, 5).map((s, i) => (
-                    <div key={i} className="flex justify-between py-3 text-sm">
-                      <span className="text-white/50">{String(i + 1).padStart(2, "0")}. {s.name}</span>
-                      <span className="text-[#e7f8c8] font-bold">{s.score}</span>
+                    <div key={i} style={{
+                      display: "flex", justifyContent: "space-between", alignItems: "center",
+                      padding: "10px 16px",
+                      borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                      background: i === 0 ? "rgba(231,248,200,0.03)" : "transparent",
+                    }}>
+                      <span style={{ fontSize: "11px", color: i === 0 ? "#e7f8c8" : "rgba(242,242,242,0.4)", fontFamily: "monospace", letterSpacing: "0.1em" }}>
+                        {String(i + 1).padStart(2, "0")}. {s.name}
+                      </span>
+                      <span style={{ fontSize: "13px", color: "#e7f8c8", fontWeight: 700, fontFamily: "monospace" }}>
+                        {String(s.score).padStart(6, "0")}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -361,67 +502,133 @@ export default function GamePage() {
         )}
 
         {phase === "playing" && (
-          <div className="flex flex-col items-center gap-4 w-full">
-            <div className="flex items-center justify-between w-full max-w-lg text-xs tracking-widest uppercase">
-              <span className="text-white/40">Score: <span className="text-[#e7f8c8] font-bold">{liveScore}</span></span>
-              <span className="text-white/40">
-                Leben: <span className="text-[#e7f8c8]">{"♦ ".repeat(liveLives).trim()}</span>
-              </span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0", position: "relative", zIndex: 1 }}>
+            {/* HUD header bar */}
+            <div style={{
+              width: "480px", display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "10px 16px",
+              background: "rgba(6,6,6,0.9)",
+              border: "1px solid rgba(231,248,200,0.12)",
+              borderBottom: "none",
+              fontFamily: "monospace",
+            }}>
+              <div>
+                <span style={{ fontSize: "9px", color: "rgba(231,248,200,0.4)", letterSpacing: "0.3em" }}>PILOT: </span>
+                <span style={{ fontSize: "11px", color: "#e7f8c8", letterSpacing: "0.15em" }}>{playerName.toUpperCase()}</span>
+              </div>
+              <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} style={{ width: "16px", height: "8px", background: i < liveLives ? "#e7f8c8" : "rgba(231,248,200,0.1)", transition: "background 0.3s" }} />
+                ))}
+              </div>
             </div>
+
             <canvas
               ref={canvasRef}
               width={480}
               height={600}
-              className="border border-white/10"
-              style={{ touchAction: "none" }}
+              style={{ display: "block", border: "1px solid rgba(231,248,200,0.12)" }}
             />
-            <p className="text-white/20 text-[10px] tracking-widest">
-              ← → oder A D bewegen · Leertaste schießen
-            </p>
+
+            <div style={{
+              width: "480px", display: "flex", justifyContent: "space-between",
+              padding: "10px 16px",
+              background: "rgba(6,6,6,0.9)",
+              border: "1px solid rgba(231,248,200,0.12)",
+              borderTop: "none",
+              fontFamily: "monospace",
+            }}>
+              <span style={{ fontSize: "9px", color: "rgba(242,242,242,0.2)", letterSpacing: "0.2em" }}>← → A D BEWEGEN</span>
+              <span style={{ fontSize: "9px", color: "rgba(242,242,242,0.2)", letterSpacing: "0.2em" }}>SPACE SCHIESSSEN</span>
+            </div>
           </div>
         )}
 
         {phase === "gameover" && (
-          <div className="text-center max-w-md w-full">
-            <h1 className="font-display text-5xl text-white mb-2">
-              Game <span className="text-[#e7f8c8]">Over</span>
-            </h1>
-            <p className="text-white/40 mb-2 text-sm">
-              {playerName} — Score: <span className="text-[#e7f8c8] font-bold text-xl">{finalScore}</span>
-            </p>
+          <div style={{ textAlign: "center", maxWidth: "460px", width: "100%", position: "relative", zIndex: 1 }}>
+            {/* Dramatic game over */}
+            <div style={{ marginBottom: "40px" }}>
+              <h1
+                className={glitchActive ? "glitch" : ""}
+                data-text="GAME OVER"
+                style={{
+                  fontSize: "clamp(3rem,8vw,5rem)",
+                  fontWeight: 900, letterSpacing: "-0.04em",
+                  fontFamily: "Helvetica Neue, sans-serif",
+                  textTransform: "uppercase",
+                  color: glitchActive ? "#ff4444" : "#f2f2f2",
+                  textShadow: glitchActive ? "0 0 30px rgba(255,68,68,0.8), 0 0 60px rgba(255,68,68,0.4)" : "none",
+                  transition: "color 0.05s, text-shadow 0.05s",
+                  lineHeight: 1,
+                  marginBottom: "8px",
+                }}
+              >
+                GAME OVER
+              </h1>
+              <div style={{ height: "2px", background: "linear-gradient(90deg, transparent, #ff4444, transparent)", margin: "16px auto", width: "200px" }} />
+              <p style={{ color: "rgba(242,242,242,0.4)", fontSize: "13px", letterSpacing: "0.2em", fontFamily: "monospace" }}>
+                {playerName.toUpperCase()} — SCORE:&nbsp;
+                <span style={{ color: "#e7f8c8", fontWeight: 700, fontSize: "20px" }}>{String(finalScore).padStart(6, "0")}</span>
+              </p>
+            </div>
 
-            <div className="my-8">
-              <h2 className="text-[10px] tracking-widest uppercase text-[#e7f8c8]/50 mb-4">Highscores</h2>
-              <div className="divide-y divide-white/5 border border-white/5">
+            <div style={{ marginBottom: "32px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                <div style={{ height: "1px", flex: 1, background: "rgba(255,255,255,0.06)" }} />
+                <span style={{ fontSize: "9px", letterSpacing: "0.4em", textTransform: "uppercase", color: "rgba(231,248,200,0.4)" }}>Highscores</span>
+                <div style={{ height: "1px", flex: 1, background: "rgba(255,255,255,0.06)" }} />
+              </div>
+              <div style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
                 {leaderboard.slice(0, 10).map((s, i) => (
-                  <div
-                    key={i}
-                    className={`flex justify-between px-4 py-3 text-sm ${
-                      s.name === playerName && s.score === finalScore ? "bg-[#e7f8c8]/5" : ""
-                    }`}
-                  >
-                    <span className={`${i === 0 ? "text-[#e7f8c8]" : "text-white/40"}`}>
+                  <div key={i} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "10px 16px",
+                    borderBottom: i < leaderboard.slice(0, 10).length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                    background: s.name === playerName && s.score === finalScore ? "rgba(231,248,200,0.04)" : "transparent",
+                  }}>
+                    <span style={{ fontSize: "11px", color: i === 0 ? "#e7f8c8" : "rgba(242,242,242,0.4)", fontFamily: "monospace" }}>
                       {String(i + 1).padStart(2, "0")}. {s.name}
                     </span>
-                    <span className="text-[#e7f8c8] font-bold">{s.score}</span>
+                    <span style={{ fontSize: "13px", color: "#e7f8c8", fontWeight: 700, fontFamily: "monospace" }}>
+                      {String(s.score).padStart(6, "0")}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex gap-3 justify-center">
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
               <button
                 onClick={() => {
                   setPhase("name");
                   setLiveScore(0);
                   setLiveLives(3);
                 }}
-                className="btn-tma"
+                style={{
+                  padding: "12px 24px", background: "#e7f8c8", border: "none",
+                  color: "#060606", fontSize: "11px", letterSpacing: "0.35em", textTransform: "uppercase",
+                  fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                }}
               >
-                Nochmal spielen
+                Retry →
               </button>
-              <Link href="/" className="btn-tma">
-                Zur Website
+              <Link href="/" style={{
+                padding: "12px 24px", background: "transparent",
+                border: "1px solid rgba(255,255,255,0.15)",
+                color: "rgba(242,242,242,0.5)", fontSize: "11px", letterSpacing: "0.35em",
+                textTransform: "uppercase", textDecoration: "none", display: "flex", alignItems: "center",
+                transition: "all 0.3s",
+              }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(231,248,200,0.4)";
+                  (e.currentTarget as HTMLAnchorElement).style.color = "#e7f8c8";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.15)";
+                  (e.currentTarget as HTMLAnchorElement).style.color = "rgba(242,242,242,0.5)";
+                }}
+              >
+                Exit
               </Link>
             </div>
           </div>
