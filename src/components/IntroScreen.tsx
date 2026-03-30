@@ -1,123 +1,91 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { useRouter } from "next/navigation";
+import TMALogo from "@/components/TMALogo";
 
-interface Props {
-  onEnter: () => void;
-}
-
-export default function IntroScreen({ onEnter }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+export default function IntroScreen({ onEnter }: { onEnter: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Animate in
-    const tl = gsap.timeline();
-    tl.fromTo(
-      ".intro-btn",
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, stagger: 0.15, duration: 0.6, ease: "power3.out", delay: 0.8 }
-    );
-    tl.fromTo(
-      ".intro-logo",
-      { opacity: 0, scale: 0.9 },
-      { opacity: 1, scale: 1, duration: 0.8, ease: "power3.out" },
-      0.3
-    );
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    tl.fromTo(".i-logo", { opacity: 0, scale: .85 }, { opacity: 1, scale: 1, duration: 1 }, .4)
+      .fromTo(".i-line", { scaleX: 0 }, { scaleX: 1, duration: .8, stagger: .1 }, .8)
+      .fromTo(".i-btn", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .5, stagger: .08 }, 1.2)
+      .fromTo(".i-year", { opacity: 0 }, { opacity: 1, duration: .6 }, 1.4);
   }, []);
 
-  const handleExit = (dest: "site" | "game") => {
-    gsap.to(containerRef.current, {
-      opacity: 0,
-      scale: 0.98,
-      duration: 0.6,
-      ease: "power3.inOut",
-      onComplete: () => {
-        if (dest === "game") {
-          router.push("/game");
-        } else {
-          onEnter();
-        }
-      },
-    });
+  const exit = (dest: "site" | "game") => {
+    gsap.to(ref.current, { opacity: 0, scale: .97, duration: .7, ease: "power3.inOut",
+      onComplete: () => dest === "game" ? router.push("/game") : onEnter() });
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="fixed inset-0 z-[200] bg-[#0a0a0a] flex items-center justify-center overflow-hidden"
-    >
-      {/* Background video / placeholder */}
-      <div className="absolute inset-0">
-        {/* Placeholder gradient until real video is dropped in */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#0a0a0a]" />
-        {/* Animated grid lines */}
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "linear-gradient(#e7f8c8 1px, transparent 1px), linear-gradient(90deg, #e7f8c8 1px, transparent 1px)",
-            backgroundSize: "80px 80px",
-          }}
-        />
-        {/* Radial glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(231,248,200,0.06)_0%,_transparent_70%)]" />
-      </div>
+    <div ref={ref} className="fixed inset-0 z-[300] flex items-center justify-center grid-bg"
+      style={{ background: "#060606" }}>
+
+      {/* Corner lines */}
+      <div className="i-line absolute top-6 left-6 w-12 h-px" style={{ background: "rgba(231,248,200,.3)", transformOrigin: "left" }} />
+      <div className="i-line absolute top-6 left-6 w-px h-12" style={{ background: "rgba(231,248,200,.3)", transformOrigin: "top" }} />
+      <div className="i-line absolute top-6 right-6 w-12 h-px" style={{ background: "rgba(231,248,200,.3)", transformOrigin: "right" }} />
+      <div className="i-line absolute top-6 right-6 w-px h-12" style={{ background: "rgba(231,248,200,.3)", transformOrigin: "top" }} />
+      <div className="i-line absolute bottom-6 left-6 w-12 h-px" style={{ background: "rgba(231,248,200,.3)", transformOrigin: "left" }} />
+      <div className="i-line absolute bottom-6 left-6 w-px h-12" style={{ background: "rgba(231,248,200,.3)", transformOrigin: "bottom" }} />
+      <div className="i-line absolute bottom-6 right-6 w-12 h-px" style={{ background: "rgba(231,248,200,.3)", transformOrigin: "right" }} />
+      <div className="i-line absolute bottom-6 right-6 w-px h-12" style={{ background: "rgba(231,248,200,.3)", transformOrigin: "bottom" }} />
+
+      {/* Radial glow */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(231,248,200,.05), transparent)" }} />
 
       {/* Center logo */}
-      <div className="intro-logo relative z-10 text-center pointer-events-none select-none">
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <div className="w-14 h-14 border-2 border-[#e7f8c8] flex items-center justify-center">
-            <span className="text-[#e7f8c8] text-xl font-black">TMA</span>
-          </div>
-        </div>
-        <p className="text-[10px] tracking-[0.5em] uppercase text-white/30">
-          The Modesty Argument
-        </p>
+      <div className="i-logo flex flex-col items-center gap-6">
+        <TMALogo variant="light" height={48} />
+        <div style={{ height: "1px", width: "60px", background: "rgba(231,248,200,.2)" }} />
+        <p className="label" style={{ color: "rgba(255,255,255,.3)" }}>2025 — Marketing Tech</p>
       </div>
 
-      {/* LEFT — Game button */}
-      <button
-        onClick={() => handleExit("game")}
-        className="intro-btn absolute left-8 bottom-1/2 translate-y-1/2 md:left-16 flex flex-col items-center gap-3 group"
-      >
-        <span className="text-[10px] tracking-[0.4em] uppercase text-white/30 group-hover:text-[#e7f8c8] transition-colors">
-          Game
-        </span>
-        <div className="w-px h-16 bg-white/10 group-hover:bg-[#e7f8c8]/50 transition-colors" />
-        <div className="w-2 h-2 border border-white/30 group-hover:border-[#e7f8c8] rotate-45 transition-colors" />
+      {/* LEFT — Game */}
+      <button onClick={() => exit("game")} className="i-btn group"
+        style={{ position: "absolute", left: "clamp(24px,5vw,64px)", top: "50%", transform: "translateY(-50%)",
+          background: "none", border: "none", cursor: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+        <span className="label" style={{ color: "rgba(255,255,255,.3)", transition: "color .3s" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#e7f8c8")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,.3)")}>Game</span>
+        <div style={{ width: "1px", height: "60px", background: "rgba(255,255,255,.1)" }} />
+        <div style={{ width: "6px", height: "6px", border: "1px solid rgba(255,255,255,.3)", transform: "rotate(45deg)" }} />
       </button>
 
-      {/* RIGHT — Enter site button */}
-      <button
-        onClick={() => handleExit("site")}
-        className="intro-btn absolute right-8 bottom-1/2 translate-y-1/2 md:right-16 flex flex-col items-center gap-3 group"
-      >
-        <span className="text-[10px] tracking-[0.4em] uppercase text-white/30 group-hover:text-[#e7f8c8] transition-colors">
-          Enter
-        </span>
-        <div className="w-px h-16 bg-white/10 group-hover:bg-[#e7f8c8]/50 transition-colors" />
-        <div className="w-2 h-2 border border-white/30 group-hover:border-[#e7f8c8] rotate-45 transition-colors" />
+      {/* RIGHT — Enter */}
+      <button onClick={() => exit("site")} className="i-btn group"
+        style={{ position: "absolute", right: "clamp(24px,5vw,64px)", top: "50%", transform: "translateY(-50%)",
+          background: "none", border: "none", cursor: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+        <span className="label" style={{ color: "rgba(255,255,255,.3)", transition: "color .3s" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#e7f8c8")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,.3)")}>Enter</span>
+        <div style={{ width: "1px", height: "60px", background: "rgba(255,255,255,.1)" }} />
+        <div style={{ width: "6px", height: "6px", border: "1px solid rgba(255,255,255,.3)", transform: "rotate(45deg)" }} />
       </button>
 
-      {/* BOTTOM RIGHT — Skip */}
-      <button
-        onClick={() => handleExit("site")}
-        className="intro-btn absolute bottom-8 right-8 md:bottom-12 md:right-12 text-[10px] tracking-[0.35em] uppercase text-white/20 hover:text-[#e7f8c8] transition-colors flex items-center gap-2"
-      >
-        <span>Überspringen</span>
-        <span className="text-[#e7f8c8]">→</span>
+      {/* Skip */}
+      <button onClick={() => exit("site")} className="i-btn"
+        style={{ position: "absolute", bottom: "clamp(24px,4vw,48px)", right: "clamp(24px,5vw,64px)",
+          background: "none", border: "none", cursor: "none",
+          fontSize: "10px", letterSpacing: ".4em", textTransform: "uppercase", color: "rgba(255,255,255,.2)",
+          display: "flex", alignItems: "center", gap: "8px", transition: "color .3s" }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = "#e7f8c8")}
+        onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,.2)")}>
+        Überspringen →
       </button>
 
-      {/* BOTTOM LEFT — Scroll hint */}
-      <div className="intro-btn absolute bottom-8 left-8 md:bottom-12 md:left-12 text-[10px] tracking-[0.35em] uppercase text-white/15 flex items-center gap-2">
-        <div className="w-6 h-px bg-white/15" />
-        <span>2025</span>
+      {/* Year */}
+      <div className="i-year" style={{ position: "absolute", bottom: "clamp(24px,4vw,48px)", left: "clamp(24px,5vw,64px)",
+        fontSize: "10px", letterSpacing: ".4em", color: "rgba(255,255,255,.15)" }}>
+        © 2025
       </div>
     </div>
   );
 }
+

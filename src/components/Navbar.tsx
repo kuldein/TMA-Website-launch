@@ -5,115 +5,95 @@ import Link from "next/link";
 import { gsap } from "gsap";
 import TMALogo from "@/components/TMALogo";
 
-const navLinks = [
-  { href: "/", label: "Home" },
+const links = [
   { href: "/ueber-uns", label: "Über uns" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/kunden", label: "Kunden" },
   { href: "/game", label: "Game" },
   { href: "/blog", label: "Blog" },
-  { href: "/kontakt", label: "Kontakt" },
 ];
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const navRef = useRef<HTMLElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const fn = () => setScrolled(window.scrollY > 60);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
   }, []);
 
   useEffect(() => {
     if (!menuRef.current) return;
     if (open) {
-      gsap.fromTo(
-        menuRef.current,
-        { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }
-      );
-      gsap.fromTo(
-        ".menu-link",
-        { opacity: 0, x: -30 },
-        { opacity: 1, x: 0, duration: 0.4, stagger: 0.06, ease: "power3.out", delay: 0.1 }
-      );
+      gsap.fromTo(menuRef.current, { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: .4, ease: "power3.out" });
+      gsap.fromTo(".m-link", { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: .4, stagger: .05, ease: "power3.out", delay: .1 });
     }
   }, [open]);
 
   return (
     <>
-      <nav
-        ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-[100] px-6 md:px-12 py-5 flex items-center justify-between transition-all duration-500 ${
-          scrolled ? "bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/5" : ""
-        }`}
-      >
+      <nav className="fixed top-0 left-0 right-0 z-[200]"
+        style={{
+          padding: "0 clamp(24px,5vw,80px)",
+          height: "72px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          transition: "background .4s, border-color .4s",
+          background: scrolled ? "rgba(6,6,6,.92)" : "transparent",
+          borderBottom: scrolled ? "1px solid rgba(255,255,255,.06)" : "1px solid transparent",
+          backdropFilter: scrolled ? "blur(20px)" : "none",
+        }}>
+
         {/* Logo */}
-        <Link href="/" className="flex items-center group">
-          <TMALogo variant="light" height={28} className="opacity-80 group-hover:opacity-100 transition-opacity" />
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+          <TMALogo variant="light" height={22} />
         </Link>
 
-        {/* Desktop links */}
+        {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-xs font-medium tracking-widest uppercase text-white/50 hover:text-[#e7f8c8] transition-colors duration-300"
-            >
-              {link.label}
-            </Link>
+          {links.map((l) => (
+            <Link key={l.href} href={l.href}
+              style={{ fontSize: "11px", fontWeight: 600, letterSpacing: ".12em", textTransform: "uppercase",
+                color: "rgba(255,255,255,.4)", textDecoration: "none", transition: "color .3s" }}
+              className="hover:text-[#e7f8c8]">{l.label}</Link>
           ))}
         </div>
 
         {/* CTA */}
-        <Link
-          href="/kontakt"
-          className="hidden md:inline-flex btn-tma text-[11px]"
-        >
+        <Link href="/kontakt" className="hidden md:inline-flex btn" style={{ padding: "12px 28px", fontSize: "10px" }}>
           Projekt starten
         </Link>
 
         {/* Hamburger */}
-        <button
-          onClick={() => setOpen(!open)}
-          className="md:hidden flex flex-col gap-1.5 p-2"
-          aria-label="Menü"
-        >
-          <span className={`block w-6 h-px bg-[#e7f8c8] transition-all duration-300 ${open ? "rotate-45 translate-y-2.5" : ""}`} />
-          <span className={`block w-6 h-px bg-[#e7f8c8] transition-all duration-300 ${open ? "opacity-0" : ""}`} />
-          <span className={`block w-6 h-px bg-[#e7f8c8] transition-all duration-300 ${open ? "-rotate-45 -translate-y-2.5" : ""}`} />
+        <button onClick={() => setOpen(!open)} className="md:hidden flex flex-col gap-1.5 p-2"
+          style={{ background: "none", border: "none", cursor: "none" }}>
+          <span style={{ display: "block", width: "24px", height: "1px", background: "#e7f8c8",
+            transition: "transform .3s", transform: open ? "rotate(45deg) translate(0, 8px)" : "none" }} />
+          <span style={{ display: "block", width: "24px", height: "1px", background: "#e7f8c8",
+            transition: "opacity .3s", opacity: open ? 0 : 1 }} />
+          <span style={{ display: "block", width: "24px", height: "1px", background: "#e7f8c8",
+            transition: "transform .3s", transform: open ? "rotate(-45deg) translate(0, -8px)" : "none" }} />
         </button>
       </nav>
 
       {/* Mobile menu */}
       {open && (
-        <div
-          ref={menuRef}
-          className="fixed inset-0 z-[99] bg-[#0a0a0a] flex flex-col justify-center px-10"
-        >
-          <div className="flex flex-col gap-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="menu-link text-4xl font-black uppercase tracking-tight text-white/80 hover:text-[#e7f8c8] transition-colors"
-              >
-                {link.label}
+        <div ref={menuRef} className="fixed inset-0 z-[199]"
+          style={{ background: "#060606", display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 clamp(24px,8vw,80px)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "32px", marginBottom: "48px" }}>
+            {[{ href: "/", label: "Home" }, ...links, { href: "/kontakt", label: "Kontakt" }].map((l) => (
+              <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="m-link"
+                style={{ fontSize: "clamp(2.5rem,8vw,5rem)", fontWeight: 900, letterSpacing: "-.04em",
+                  textTransform: "uppercase", color: "rgba(255,255,255,.7)", textDecoration: "none", transition: "color .3s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#e7f8c8")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,.7)")}>
+                {l.label}
               </Link>
             ))}
           </div>
-          <Link
-            href="/kontakt"
-            onClick={() => setOpen(false)}
-            className="menu-link btn-tma mt-12 self-start"
-          >
-            Projekt starten
-          </Link>
         </div>
       )}
     </>

@@ -8,127 +8,120 @@ import Link from "next/link";
 gsap.registerPlugin(ScrollTrigger);
 
 export default function HeroSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const headRef = useRef<HTMLHeadingElement>(null);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline();
-      tl.fromTo(
-        ".hero-line",
-        { y: "110%", opacity: 0 },
-        { y: "0%", opacity: 1, stagger: 0.12, duration: 1, ease: "power4.out" }
-      )
-        .fromTo(
-          ".hero-sub",
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-          "-=0.4"
-        )
-        .fromTo(
-          ".hero-cta",
-          { opacity: 0, y: 15 },
-          { opacity: 1, y: 0, stagger: 0.1, duration: 0.6, ease: "power3.out" },
-          "-=0.3"
-        );
+      // Main timeline
+      const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
 
-      // Parallax
-      gsap.to(".hero-bg-text", {
-        y: 120,
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: 1.5,
-        },
+      tl.fromTo(".h-line", { yPercent: 120, opacity: 0 },
+        { yPercent: 0, opacity: 1, duration: 1.2, stagger: 0.08 })
+        .fromTo(".h-sub", { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: .8 }, "-=.6")
+        .fromTo(".h-cta", { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: .6, stagger: .1 }, "-=.4")
+        .fromTo(".h-stat", { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: .5, stagger: .06 }, "-=.3")
+        .fromTo(".h-label", { opacity: 0, x: -20 },
+          { opacity: 1, x: 0, duration: .5 }, 0.2);
+
+      // Slow parallax on scroll
+      gsap.to(".h-bg-word", {
+        yPercent: 40,
+        ease: "none",
+        scrollTrigger: { trigger: ref.current, start: "top top", end: "bottom top", scrub: 2 },
       });
-    }, sectionRef);
 
+      // Counter animation
+      document.querySelectorAll(".count-up").forEach((el) => {
+        const target = parseInt(el.getAttribute("data-target") ?? "0");
+        const suffix = el.getAttribute("data-suffix") ?? "";
+        const obj = { val: 0 };
+        gsap.fromTo(obj, { val: 0 }, { val: target, duration: 2, ease: "power2.out",
+          onUpdate: () => { el.textContent = Math.round(obj.val) + suffix; }
+        });
+      });
+
+    }, ref);
     return () => ctx.revert();
   }, []);
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative min-h-screen flex flex-col justify-end pb-24 px-6 md:px-12 overflow-hidden pt-32"
-    >
-      {/* Background giant text */}
-      <div className="hero-bg-text absolute top-0 left-0 right-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
-        <span className="text-[20vw] font-black text-white/[0.02] leading-none tracking-tighter whitespace-nowrap">
-          TMA
-        </span>
+    <section ref={ref} className="relative min-h-screen flex flex-col justify-end overflow-hidden grid-bg"
+      style={{ paddingBottom: "8vh", paddingLeft: "clamp(24px,5vw,80px)", paddingRight: "clamp(24px,5vw,80px)", paddingTop: "120px" }}>
+
+      {/* Giant BG word */}
+      <div className="h-bg-word absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+        <span className="display text-white/[0.025]" style={{ fontSize: "clamp(8rem,22vw,22rem)" }}>TMA</span>
       </div>
 
-      {/* Green dot accent */}
-      <div className="absolute top-40 right-12 md:right-24 w-2 h-2 bg-[#e7f8c8] rounded-full animate-pulse" />
-      <div className="absolute top-52 right-16 md:right-32 w-1 h-1 bg-[#e7f8c8]/40 rounded-full" />
+      {/* Green dots */}
+      <div className="absolute top-48 right-[15%] w-1.5 h-1.5 rounded-full bg-[#e7f8c8]" style={{ animation: "pulse 2s infinite" }} />
+      <div className="absolute top-60 right-[18%] w-1 h-1 rounded-full bg-[#e7f8c8]/40" />
+      <div className="absolute top-80 left-[10%] w-1 h-1 rounded-full bg-[#e7f8c8]/20" />
+
+      {/* Vertical line accent */}
+      <div className="absolute top-32 right-[8%] h-32 w-px bg-gradient-to-b from-transparent via-[#e7f8c8]/30 to-transparent" />
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto w-full">
+      <div className="relative z-10 max-w-[1400px] mx-auto w-full">
+
         {/* Label */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-8 h-px bg-[#e7f8c8]" />
-          <span className="text-[10px] tracking-[0.5em] uppercase text-[#e7f8c8]/70">
-            Marketing Tech Agentur
-          </span>
+        <div className="h-label flex items-center gap-4 mb-8">
+          <span className="line-green" />
+          <span className="label">Marketing Tech Agentur — Berlin</span>
         </div>
 
         {/* Headline */}
-        <h1
-          ref={headRef}
-          className="font-display text-[clamp(3rem,10vw,9rem)] text-white mb-8"
-        >
-          <div className="overflow-hidden">
-            <span className="hero-line block glitch" data-text="Wir bauen">
-              Wir bauen
-            </span>
+        <h1 className="display mb-10" style={{ fontSize: "clamp(3.5rem,11vw,10.5rem)" }}>
+          <div style={{ overflow: "hidden" }}>
+            <span className="h-line block glitch" data-text="Wir bauen">Wir bauen</span>
           </div>
-          <div className="overflow-hidden">
-            <span className="hero-line block text-[#e7f8c8]">Marken, die</span>
+          <div style={{ overflow: "hidden" }}>
+            <span className="h-line block" style={{ color: "#e7f8c8" }}>Marken</span>
           </div>
-          <div className="overflow-hidden">
-            <span className="hero-line block">wachsen.</span>
+          <div style={{ overflow: "hidden" }}>
+            <span className="h-line block text-white/80">die wachsen.</span>
           </div>
         </h1>
 
-        {/* Subline */}
-        <p className="hero-sub text-white/40 text-base md:text-lg max-w-xl leading-relaxed mb-12">
-          Strategie, Kreativität und datengetriebene Umsetzung — messbar, skalierbar und mit klarer Wirkung.
-        </p>
-
-        {/* CTAs */}
-        <div className="flex flex-wrap gap-4">
-          <Link href="/portfolio" className="hero-cta btn-tma">
-            Portfolio entdecken
-          </Link>
-          <Link
-            href="/kontakt"
-            className="hero-cta text-[13px] font-semibold tracking-widest uppercase text-white/40 hover:text-[#e7f8c8] transition-colors flex items-center gap-2"
-          >
-            Projekt starten <span>→</span>
-          </Link>
+        {/* Sub + CTA row */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
+          <div>
+            <p className="h-sub text-white/40 leading-relaxed max-w-md" style={{ fontSize: "clamp(14px,1.2vw,18px)" }}>
+              Strategie, Kreativität und datengetriebene Umsetzung —<br />
+              messbar, skalierbar und mit klarer Wirkung.
+            </p>
+          </div>
+          <div className="flex items-center gap-6">
+            <Link href="/portfolio" className="h-cta btn">Portfolio →</Link>
+            <Link href="/kontakt" className="h-cta btn-ghost">Projekt starten ↗</Link>
+          </div>
         </div>
 
         {/* Stats */}
-        <div className="hero-cta flex flex-wrap gap-12 mt-16 pt-12 border-t border-white/5">
+        <div className="h-stat flex flex-wrap gap-12 mt-16 pt-8 border-t border-white/[.06]">
           {[
-            { num: "20+", label: "Projekte" },
-            { num: "15+", label: "Kunden" },
-            { num: "6", label: "Leistungen" },
-            { num: "∞", label: "Ambitionen" },
+            { val: 20, suffix: "+", label: "Projekte" },
+            { val: 15, suffix: "+", label: "Kunden" },
+            { val: 6,  suffix: "",  label: "Leistungen" },
+            { val: 3,  suffix: "+", label: "Jahre" },
           ].map((s) => (
             <div key={s.label}>
-              <div className="text-3xl font-black text-[#e7f8c8]">{s.num}</div>
-              <div className="text-[10px] tracking-widest uppercase text-white/30 mt-1">{s.label}</div>
+              <div className="display text-[#e7f8c8]" style={{ fontSize: "clamp(2rem,4vw,3.5rem)" }}>
+                <span className="count-up" data-target={s.val} data-suffix={s.suffix}>{s.val}{s.suffix}</span>
+              </div>
+              <div className="label mt-2 text-white/30">{s.label}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-        <div className="w-px h-12 bg-gradient-to-b from-[#e7f8c8]/40 to-transparent animate-pulse" />
-        <span className="text-[9px] tracking-widest uppercase text-white/20">Scroll</span>
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3">
+        <div className="w-px h-16 bg-gradient-to-b from-[#e7f8c8]/50 to-transparent" style={{ animation: "pulse 2s infinite" }} />
+        <span className="label" style={{ fontSize: "8px", letterSpacing: ".6em" }}>SCROLL</span>
       </div>
     </section>
   );

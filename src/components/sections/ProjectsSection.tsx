@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
@@ -9,84 +9,72 @@ import { projects } from "@/data";
 gsap.registerPlugin(ScrollTrigger);
 
 export default function ProjectsSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const [hovered, setHovered] = useState<number | null>(null);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        ".project-row",
-        { opacity: 0, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          stagger: 0.08,
-          duration: 0.7,
-          ease: "power3.out",
-          scrollTrigger: { trigger: sectionRef.current, start: "top 75%" },
-        }
-      );
-    }, sectionRef);
+      gsap.fromTo(".prj-head", { opacity: 0, y: 50 },
+        { opacity: 1, y: 0, duration: 1, ease: "power3.out",
+          scrollTrigger: { trigger: ref.current, start: "top 80%" } });
+
+      gsap.fromTo(".prj-row", { opacity: 0, x: -30 },
+        { opacity: 1, x: 0, duration: .6, stagger: .07, ease: "power3.out",
+          scrollTrigger: { trigger: ".prj-list", start: "top 80%" } });
+    }, ref);
     return () => ctx.revert();
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative px-6 md:px-12 py-32 overflow-hidden">
-      <div className="absolute top-0 left-6 md:left-12 right-6 md:right-12 h-px bg-white/5" />
+    <section ref={ref} className="relative overflow-hidden"
+      style={{ padding: "clamp(60px,10vw,160px) clamp(24px,5vw,80px)" }}>
 
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-px bg-[#e7f8c8]" />
-          <span className="text-[10px] tracking-[0.5em] uppercase text-[#e7f8c8]/70">Projekte</span>
-        </div>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
-          <h2 className="font-display text-[clamp(2.5rem,6vw,5rem)] text-white leading-tight">
-            Ausgewählte<br />
-            <span className="text-[#e7f8c8]">Arbeiten.</span>
-          </h2>
-          <Link
-            href="/portfolio"
-            className="text-[11px] tracking-widest uppercase text-white/40 hover:text-[#e7f8c8] transition-colors flex items-center gap-2"
-          >
-            Alle Projekte <span>→</span>
-          </Link>
+      <div className="absolute top-0 left-[5%] right-[5%] h-px bg-white/[.05]" />
+
+      <div className="max-w-[1400px] mx-auto">
+        {/* Header */}
+        <div className="prj-head flex flex-col md:flex-row md:items-end justify-between gap-6 mb-20">
+          <div>
+            <div className="flex items-center gap-4 mb-6">
+              <span className="line-green" />
+              <span className="label">Projekte</span>
+            </div>
+            <h2 className="display" style={{ fontSize: "clamp(2.5rem,7vw,7rem)" }}>
+              Ausgewählte<br /><span style={{ color: "#e7f8c8" }}>Arbeiten.</span>
+            </h2>
+          </div>
+          <Link href="/portfolio" className="btn-ghost">Alle Projekte →</Link>
         </div>
 
-        {/* Project list */}
-        <div className="divide-y divide-white/5">
+        {/* List */}
+        <div className="prj-list" style={{ borderTop: "1px solid rgba(255,255,255,.05)" }}>
           {projects.slice(0, 6).map((p, i) => (
-            <Link
-              key={p.slug}
-              href={`/portfolio/${p.slug}`}
-              className="project-row group flex items-center justify-between py-6 md:py-8 hover:px-4 transition-all duration-300"
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div className="flex items-center gap-6">
-                <span className="text-[10px] tracking-widest text-white/20 w-6">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div>
-                  <h3 className="text-lg md:text-2xl font-bold text-white group-hover:text-[#e7f8c8] transition-colors duration-300">
-                    {p.title}
-                  </h3>
-                  <p className="text-xs text-white/30 mt-1 hidden md:block">{p.subtitle}</p>
+            <Link key={p.slug} href={`/portfolio/${p.slug}`} className="prj-row group block"
+              style={{ borderBottom: "1px solid rgba(255,255,255,.05)", textDecoration: "none" }}>
+              <div className="flex items-center justify-between group-hover:bg-white/[.02] transition-colors duration-300"
+                style={{ padding: "28px 0", gap: "24px" }}>
+                <div className="flex items-center gap-8">
+                  <span className="label" style={{ color: "rgba(255,255,255,.15)", minWidth: "28px" }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <div className="font-bold text-white group-hover:text-[#e7f8c8] transition-colors duration-300"
+                      style={{ fontSize: "clamp(18px,2.5vw,28px)", letterSpacing: "-.02em" }}>
+                      {p.title}
+                    </div>
+                    <div className="hidden md:block label mt-1 text-white/30">{p.subtitle}</div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <span className="hidden md:block text-[11px] tracking-widest uppercase text-white/30">
-                  {p.year}
-                </span>
-                <div className="flex flex-wrap gap-2 hidden md:flex">
-                  {p.tags.slice(0, 2).map((tag) => (
-                    <span key={tag} className="text-[9px] tracking-widest uppercase text-white/20 border border-white/10 px-2 py-1">
-                      {tag}
-                    </span>
-                  ))}
+                <div className="flex items-center gap-6">
+                  <span className="hidden md:block label text-white/25">{p.year}</span>
+                  <div className="hidden md:flex gap-2">
+                    {p.tags.slice(0, 2).map((t) => (
+                      <span key={t} style={{ fontSize: "9px", letterSpacing: ".1em", textTransform: "uppercase",
+                        color: "rgba(255,255,255,.2)", border: "1px solid rgba(255,255,255,.08)", padding: "4px 10px" }}>{t}</span>
+                    ))}
+                  </div>
+                  <span className="text-[#e7f8c8] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{ fontSize: "20px" }}>→</span>
                 </div>
-                <span className="text-[#e7f8c8] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  →
-                </span>
               </div>
             </Link>
           ))}

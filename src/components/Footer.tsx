@@ -1,46 +1,44 @@
 import Link from "next/link";
+import TMALogo from "@/components/TMALogo";
 
 export default function Footer() {
-  const year = new Date().getFullYear();
   return (
-    <footer className="border-t border-white/5 px-6 md:px-12 py-12 mt-auto">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          {/* Brand */}
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 border border-[#e7f8c8] flex items-center justify-center">
-                <span className="text-[#e7f8c8] text-xs font-black">TMA</span>
-              </div>
-              <span className="text-xs font-semibold tracking-widest uppercase text-white/50">
-                The Modesty Argument
-              </span>
-            </div>
-            <p className="text-xs text-white/30 max-w-xs">
-              Marketing-Tech-Agentur für nachhaltige Markenwachstum. Strategie, Kreativität, Performance.
+    <footer style={{ borderTop: "1px solid rgba(255,255,255,.05)", padding: "clamp(48px,8vw,96px) clamp(24px,5vw,80px) 40px" }}>
+      <div className="max-w-[1400px] mx-auto">
+        <div className="flex flex-col md:flex-row justify-between gap-12 mb-16">
+          <div style={{ maxWidth: "320px" }}>
+            <TMALogo variant="light" height={24} />
+            <p style={{ fontSize: "13px", color: "rgba(255,255,255,.3)", marginTop: "20px", lineHeight: 1.8 }}>
+              Marketing-Tech-Agentur für nachhaltiges Markenwachstum. Strategie, Kreativität, Performance.
             </p>
           </div>
-
-          {/* Links */}
-          <div className="flex flex-col sm:flex-row gap-8 text-xs tracking-widest uppercase">
-            <div className="flex flex-col gap-3 text-white/40">
-              <Link href="/ueber-uns" className="hover:text-[#e7f8c8] transition-colors">Über uns</Link>
-              <Link href="/portfolio" className="hover:text-[#e7f8c8] transition-colors">Portfolio</Link>
-              <Link href="/kunden" className="hover:text-[#e7f8c8] transition-colors">Kunden</Link>
-            </div>
-            <div className="flex flex-col gap-3 text-white/40">
-              <Link href="/blog" className="hover:text-[#e7f8c8] transition-colors">Blog</Link>
-              <Link href="/game" className="hover:text-[#e7f8c8] transition-colors">Game</Link>
-              <Link href="/kontakt" className="hover:text-[#e7f8c8] transition-colors">Kontakt</Link>
-            </div>
+          <div className="flex flex-wrap gap-12">
+            {[
+              { title: "Agentur", links: [["Über uns", "/ueber-uns"], ["Portfolio", "/portfolio"], ["Kunden", "/kunden"]] },
+              { title: "Services", links: [["Blog", "/blog"], ["Game", "/game"], ["Kontakt", "/kontakt"]] },
+            ].map((col) => (
+              <div key={col.title}>
+                <div className="label mb-5">{col.title}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  {col.links.map(([label, href]) => (
+                    <Link key={href} href={href}
+                      style={{ fontSize: "13px", color: "rgba(255,255,255,.35)", textDecoration: "none", transition: "color .3s" }}
+                      className="hover:text-[#e7f8c8]">{label}</Link>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-
-        <div className="mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-white/20 tracking-widest uppercase">
-          <span>© {year} The Modesty Argument. Alle Rechte vorbehalten.</span>
-          <div className="flex gap-6">
-            <Link href="/impressum" className="hover:text-white/50 transition-colors">Impressum</Link>
-            <Link href="/datenschutz" className="hover:text-white/50 transition-colors">Datenschutz</Link>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,.05)", paddingTop: "24px", display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "12px" }}>
+          <span style={{ fontSize: "11px", color: "rgba(255,255,255,.2)", letterSpacing: ".08em" }}>
+            © {new Date().getFullYear()} The Modesty Argument
+          </span>
+          <div style={{ display: "flex", gap: "24px" }}>
+            {[["Impressum", "/impressum"], ["Datenschutz", "/datenschutz"]].map(([l, h]) => (
+              <Link key={h} href={h} style={{ fontSize: "11px", color: "rgba(255,255,255,.2)", textDecoration: "none", letterSpacing: ".08em", transition: "color .3s" }}
+                className="hover:text-white/50">{l}</Link>
+            ))}
           </div>
         </div>
       </div>

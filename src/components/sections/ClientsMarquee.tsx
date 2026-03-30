@@ -1,28 +1,22 @@
 "use client";
-
 import { clients } from "@/data";
 
 export default function ClientsMarquee() {
-  const doubled = [...clients, ...clients];
-
+  const doubled = [...clients, ...clients, ...clients];
   return (
-    <section className="relative py-16 overflow-hidden border-y border-white/5">
-      <div className="absolute top-0 left-0 w-32 h-full bg-gradient-to-r from-[#0a0a0a] to-transparent z-10 pointer-events-none" />
-      <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-[#0a0a0a] to-transparent z-10 pointer-events-none" />
-
-      <div className="flex">
-        <div className="marquee-track flex items-center gap-16 whitespace-nowrap">
-          {doubled.map((client, i) => (
-            <span
-              key={i}
-              className="text-[11px] tracking-[0.4em] uppercase text-white/20 hover:text-[#e7f8c8] transition-colors duration-300 flex items-center gap-16"
-            >
-              {client}
-              <span className="w-1 h-1 bg-[#e7f8c8]/20 rounded-full inline-block" />
-            </span>
-          ))}
-        </div>
+    <div className="relative overflow-hidden" style={{ borderTop: "1px solid rgba(255,255,255,.05)", borderBottom: "1px solid rgba(255,255,255,.05)", padding: "24px 0" }}>
+      <div className="absolute left-0 top-0 bottom-0 w-24 pointer-events-none z-10"
+        style={{ background: "linear-gradient(to right, #060606, transparent)" }} />
+      <div className="absolute right-0 top-0 bottom-0 w-24 pointer-events-none z-10"
+        style={{ background: "linear-gradient(to left, #060606, transparent)" }} />
+      <div className="marquee">
+        {doubled.map((c, i) => (
+          <div key={i} className="flex items-center" style={{ gap: "48px", paddingRight: "48px" }}>
+            <span style={{ fontSize: "11px", letterSpacing: ".4em", textTransform: "uppercase", color: "rgba(255,255,255,.2)", whiteSpace: "nowrap" }}>{c}</span>
+            <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "rgba(231,248,200,.2)", flexShrink: 0 }} />
+          </div>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }
